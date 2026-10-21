@@ -125,6 +125,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 // 2. KONDISI: PENDAFTARAN SUKSES (Status 200 OK)
                 // Menggabungkan pesan teks dan kode status ke dalam satu string argumen yang benar
                 updateUI(`✅ Pendaftaran Sukses! User ID baru: ${hasilRespons.id} (Status Network: ${response.status})`, "success");
+                window.dataLayer = window.dataLayer || [];
+                 window.dataLayer.push({
+                'event': 'form_registration_success', // Nama event bebas
+                'formId': dataObjek.id || 'register'
+                });
                 console.log("Status Network:", response.status);
                 // formRegister.reset(); // Mengosongkan form otomatis setelah berhasil pendaftaran
             } else {
