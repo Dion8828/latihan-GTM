@@ -23,23 +23,125 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 
 
-    <h1>Selamat Datang di Web Latihan GTM!</h1>
-    <p>Halaman ini digunakan untuk mempraktikkan Tag, Trigger, dan Preview Mode.</p>
-    
-    <!-- Tombol simulasi untuk latihan klik nanti -->
-    <button id="btn-kontak">Klik Saya (Hubungi Kami)</button>
-    <button id="save">unduh</button>
-    <!-- Formulir Latihan GTM -->
-<form id="form-pendaftaran" action="javascript:void(0);>
-    <label for="nama">Nama Lengkap:</label>
-    <input type="text" id="nama" name="nama" required><br><br>
+    <h1>Form Network</h1>
+    <form id="register">
+        <div>
+            <label for="fName">First Name</label>
+            <input type="text" placeholder="First Name" required name="fName">
+        </div>
+        <div>
+            <label for="lName">Last Name</label>
+            <input type="text" placeholder="Last Name" name="lName" required>
+        </div>
+        <div>
+            <label for="phone">Phone Number</label>
+            <input type="tel" placeholder="08xxxxx" name="phone" required>
+        </div>
+        <div>
+            <label for="email">Email</label>
+            <input type="email" placeholder="Email" name="email" required>
+        </div>
+        <div>
+            <input type="radio" value="semarang" name="kota" id="semarang">
+            <label for="semarang">semarang</label>
+            <input type="radio" value="jakarta" name="kota" id="jakarta">
+            <label for="jakarta">jakarta</label>
+            <input type="radio" value="lampung" name="kota" id="lampung">
+            <label for="lampung">lampung</label>
+        </div>
+        <div>
+            <button type="submit" id="btn-submit">Register</button>
+        </div>
+    </form>
 
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email" required><br><br>
+    <!-- ELEMEN UI STATUS BARU -->
+    <div id="status-ui"></div>
 
-    <button type="submit">Kirim Pendaftaran</button>
-</form>
+</body>
 
+<script>
+    const formRegister = document.querySelector('#register');
+    const statusUi = document.querySelector('#status-ui');
+    const btnSubmit = document.querySelector('#btn-submit');
+
+    // Fungsi pembantu untuk mengubah visual UI Status (Menerima maks 2 argumen sesuai kebutuhan)
+    function updateUI(pesan, namaClass) {
+        statusUi.style.display = 'block';
+        statusUi.className = namaClass; // Mengganti warna background & teks via CSS class
+        statusUi.innerText = pesan;
+    }
+
+    formRegister.addEventListener('submit', async function(e){
+        e.preventDefault();
+        
+        const formData = new FormData(formRegister);
+        const dataObjek = Object.fromEntries(formData.entries());
+
+        if (!dataObjek.kota) {
+            updateUI("⚠️ Silakan pilih kota terlebih dahulu!", "failed");
+            return; 
+        }
+
+        try {
+            // 1. KONDISI: SEDANG MENHUBUNGKAN KE JSON/SERVER
+            btnSubmit.disabled = true; // Kunci tombol agar tidak diklik dua kali
+            updateUI("⏳ Sedang menghubungkan ke DummyJSON...", "connecting");
+
+            let response;
+            const dataPayload = {
+                firstName: dataObjek.fName,
+                lastName: dataObjek.lName,
+                phone: dataObjek.phone,
+                email: dataObjek.email,
+                city: dataObjek.kota 
+            };
+
+            if (dataObjek.kota === 'lampung') {
+                // Mengarahkan ke endpoint API yang salah agar server tetap merespons dengan JSON error (404)
+                response = await fetch('https://dummyjson.com', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dataPayload)
+                });
+            } else {
+                response = await fetch('https://dummyjson.com/users/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dataPayload)
+                });
+            }
+
+            // Validasi tipe konten: Ambil data JSON hanya jika server benar-benar merespons dengan format JSON
+            const contentType = response.headers.get("content-type");
+            let hasilRespons = {};
+            
+            if (contentType && contentType.includes("application/json")) {
+                hasilRespons = await response.json();
+            } else {
+                hasilRespons = { message: "Server tidak mengembalikan format JSON yang valid." };
+            }
+
+            if (response.ok) {
+                // 2. KONDISI: PENDAFTARAN SUKSES (Status 200 OK)
+                // Menggabungkan pesan teks dan kode status ke dalam satu string argumen yang benar
+                updateUI(`✅ Pendaftaran Sukses! User ID baru: ${hasilRespons.id} (Status Network: ${response.status})`, "success");
+                console.log("Status Network:", response.status);
+                // formRegister.reset(); // Mengosongkan form otomatis setelah berhasil pendaftaran
+            } else {
+                // 3. KONDISI: PENDAFTARAN GAGAL (Server merespons tetapi ada error seperti 404)         
+                updateUI(`❌ Pendaftaran Gagal! [Server Error ${response.status}]: ${hasilRespons.message || 'Endpoint tidak ditemukan'}`, "failed");
+                console.log("Status Network:", response.status);
+            }
+
+        } catch (error) {
+            // 4. KONDISI: GAGAL MENHUBUNGKAN KE SERVER (Masalah jaringan fisik / internet putus / API mati)
+            console.error(error);
+            updateUI("🚨 Gagal menghubungkan ke server! Periksa koneksi internet Anda.", "net-error");
+        } finally {
+            btnSubmit.disabled = false; // Buka kembali kunci tombol setelah proses selesai
+        }
+    });
+</script>
     
 
 </body>
